@@ -1,0 +1,58 @@
+---
+- name: Configuring servers according to tags on AWS
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Verify if Nadav is the owner
+      ansible.builtin.meta: end_host
+      when: tags.Owner | default('') != 'Nadav'
+
+    - name: Set the hostname based on the name tag
+      ansible.builtin.hostname:
+        name: "{{ tags.Name }}"
+    
+
+
+    - name: Ensure the service is installed based on the service tag
+      ansible.builtin.dnf:
+        name: "{{ tags.Package }}-{{ tags.Version }}"
+        state: present
+        allow_downgrade: true
+
+
+    - name: Make sure the service is up and running
+      ansible.builtin.service:
+        name: "{{ tags.Service }}"
+        state: started
+        enabled: true
+
+    - name: Ensure cronie is installed
+      ansible.builtin.dnf:
+        name: cronie
+        state: present
+
+    - name: Ensure crond service is started and enabled
+      ansible.builtin.service:
+        name: crond
+        state: started
+        enabled: true
+        
+    - name: Create a generic crontab record for restarting
+      ansible.builtin.cron:
+        name: "Scheduled Reboot"
+        minute: "{{ tags.Restart.split(' ')[1].split(':')[1] }}"
+        hour: "{{ tags.Restart.split(' ')[1].split(':')[0] }}"
+        weekday: "{{ day_map[tags.Restart.split(' ')[0] | lower] }}"
+        job: "/sbin/reboot"
+      vars:
+        day_map:
+          sunday: "0"
+          monday: "1"
+          tuesday: "2"
+          wednesday: "3"
+          thursday: "4"
+          friday: "5"
+          saturday: "6"
+
+
