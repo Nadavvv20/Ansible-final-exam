@@ -1,0 +1,41 @@
+---
+- name: Bonus playbook - use docker
+  hosts: all
+  become: true
+  tasks:
+    - name: Ensure docker is installed
+      ansible.builtin.dnf:
+        name: docker
+        state: present
+
+    - name: Ensure docker is up and running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull the service image
+      community.docker.docker_image_pull:
+        name: "{{ tags.DockerImage }}"
+
+    - name: Run the container
+      community.docker.docker_container:
+        name: "{{ tags.Service }}"
+        image: "{{ tags.DockerImage }}"
+        published_ports:
+          - "8080:80"
+        state: started
+      when: tags.Service | default('') | lower == "nginx"
+
+    - name: Run the MariaDB container
+      community.docker.docker_container:
+        name:  "{{ tags.Service }}"
+        image: "{{ tags.DockerImage }}"
+        published_ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "my_secure_password"
+          MYSQL_DATABASE: "test_db"
+        state: started
+      when: tags.Service | default('') | lower == "mariadb"
+
