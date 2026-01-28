@@ -1,0 +1,11 @@
+Answers:
+1. The pros are that the proccess of server configuration can
+be alot easier and it gives you more flexibility to change whatever you want. 
+If you want to change something specific, for example update a version of a service,
+you just change a line in a playbookfile, and then run the playbook again 
+instead of generating a whole new AMI image.
+
+
+2. The cons are that when you launch a new server, it takes more time for it to be 
+ready because you have to wait until all the configurations and services are installed
+
